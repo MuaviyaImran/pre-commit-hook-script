@@ -1,4 +1,23 @@
+#!/bin/bash
 
+# Dev Tools - Pre Commit Hook ESLint, Prettier, Husky
+# Install with: curl -fsSL https://raw.githubusercontent.com/MuaviyaImran/pre-commit-hook-script/refs/heads/main/script.sh | bash
+
+set -e
+
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+PACKAGE_MANAGER=${1:-npm}
+
+print_banner(){
+  echo -e "${BLUE}"
+  echo "╔═════════════════════════════════════════════════╗"
+  echo "║                   Dev Tools                     ║"
+  echo "║     Pre Commit Hook ESLint, Prettier, Husky     ║"
+  echo "╚═════════════════════════════════════════════════╝"
+  echo -e "${NC}"
+}
 
 set -e
 
