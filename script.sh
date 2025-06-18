@@ -10,8 +10,6 @@ NC='\033[0m' # No Color
 
 PACKAGE_MANAGER=${1:-npm}
 
-
-
 set -e
 
 PACKAGE_MANAGER=${1:-npm}
