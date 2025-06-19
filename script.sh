@@ -113,7 +113,13 @@ export default tseslint.config(
     },
     rules: {
       'prettier/prettier': 'error',
-      'semi': ['warn', 'always'],
+      "prettier/prettier": [
+        "error",
+        {
+          singleQuote: false,
+          parser: "flow",
+        },
+      ],
     },
   },
 );
