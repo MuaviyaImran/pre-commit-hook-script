@@ -1,16 +1,12 @@
 #!/bin/bash
 
 # Dev Tools - Pre Commit Hook ESLint, Prettier, Husky
-# Install with: curl -fsSL https://raw.githubusercontent.com/MuaviyaImran/pre-commit-hook-script/refs/heads/main/script.sh | bash
+# Install with: curl -fsSL https://raw.githubusercontent.com/MuaviyaImran/pre-commit-hook-script/main/script.sh | bash -s pnpm
 
 set -e
 
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
-
-PACKAGE_MANAGER=${1:-npm}
-
-set -e
 
 PACKAGE_MANAGER=${1:-npm}
 
@@ -20,6 +16,8 @@ echo "║                   Dev Tools                     ║"
 echo "║     Pre Commit Hook ESLint, Prettier, Husky     ║"
 echo "╚═════════════════════════════════════════════════╝"
 echo -e "${NC}"
+
+echo "📦 Package manager: $PACKAGE_MANAGER"
 
 # 1. Check and install jq
 echo "🔍 Checking if jq is installed..."
@@ -48,10 +46,12 @@ fi
 # 3. Install dev dependencies
 echo "📦 Installing dev dependencies using $PACKAGE_MANAGER..."
 
-DEPS="husky lint-staged prettier eslint eslint-config-prettier eslint-plugin-prettier typescript-eslint"
+DEPS="husky lint-staged prettier eslint eslint-config-prettier eslint-plugin-prettier @typescript-eslint/parser @typescript-eslint/eslint-plugin typescript-eslint"
 
 if [ "$PACKAGE_MANAGER" = "yarn" ]; then
   yarn add --dev $DEPS
+elif [ "$PACKAGE_MANAGER" = "pnpm" ]; then
+  pnpm add -D $DEPS
 else
   npm install --save-dev $DEPS
 fi
@@ -62,6 +62,8 @@ npx husky-init
 
 if [ "$PACKAGE_MANAGER" = "yarn" ]; then
   yarn
+elif [ "$PACKAGE_MANAGER" = "pnpm" ]; then
+  pnpm install
 else
   npm install
 fi
@@ -77,7 +79,7 @@ jq '.scripts.test = "echo \"No tests yet\" && exit 0"
     | .scripts.prepare = "husky install"
     | . + {
         "lint-staged": {
-          "*.{js,jsx,ts,tsx,json,css,scss,md}": [
+          "*.{js,jsx,ts,tsx,vue,json,css,scss,md}": [
             "prettier --write",
             "eslint --fix"
           ]
@@ -95,34 +97,53 @@ cat <<EOT > .prettierrc.json
 }
 EOT
 
-# 8. ESLint config
+# 8. ESLint config (flat config with TypeScript)
 echo "🧹 Creating eslint.config.js..."
 cat <<'EOT' > eslint.config.js
-import prettier from 'eslint-plugin-prettier'
+import { fileURLToPath } from 'url';
+import path from 'path';
 import tseslint from 'typescript-eslint';
+import prettier from 'eslint-plugin-prettier';
 
-export default tseslint.config(
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default [
   {
-    files: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx'],
+    files: ['src/**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: 'module',
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 2021,
+        sourceType: 'module',
+        project: './tsconfig.eslint.json',
+        tsconfigRootDir: __dirname,
+      },
     },
     plugins: {
+      '@typescript-eslint': tseslint.plugin,
       prettier,
     },
     rules: {
-      'prettier/prettier': 'error',
-      "prettier/prettier": [
-        "error",
+      ...tseslint.configs.recommended.rules,
+      'prettier/prettier': [
+        'error',
         {
-          singleQuote: false,
-          parser: "flow",
+          singleQuote: true,
+          semi: true
         },
       ],
     },
   },
-);
+];
+EOT
+
+# 8.1 Create tsconfig.eslint.json
+echo "🧠 Creating tsconfig.eslint.json..."
+cat <<EOT > tsconfig.eslint.json
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+}
 EOT
 
 # 9. Set permissions for Husky hooks
